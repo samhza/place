@@ -82,16 +82,6 @@ var colors = [][]byte{
 	{0xFF, 0xFF, 0xFF},
 }
 
-func clamp(v, min, max float64) float64 {
-	if v < min {
-		return min
-	}
-	if v > max {
-		return max
-	}
-	return v
-}
-
 func clampInt(v, min, max int) int {
 	if v < min {
 		return min
@@ -108,12 +98,7 @@ func (g *Game) Update() error {
 			g.speed += int(yoff)
 		} else {
 			fac := math.Pow(1.2, float64(yoff))
-			if newzoom := fac * g.zoom; newzoom > 0.1 && newzoom < 10 {
-				x, y := ebiten.CursorPosition()
-				g.x -= (float64(x) / g.zoom) * (1 - 1/fac)
-				g.y -= (float64(y) / g.zoom) * (1 - 1/fac)
-				g.zoom = newzoom
-			}
+			g.changeZoom(fac, true)
 		}
 	}
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
@@ -146,9 +131,9 @@ func (g *Game) Update() error {
 		case ebiten.KeySpace:
 			g.paused = !g.paused
 		case ebiten.KeyEqual:
-			g.zoom *= 1.2
+			g.changeZoom(1.2, false)
 		case ebiten.KeyMinus:
-			g.zoom /= 1.2
+			g.changeZoom(1/1.2, false)
 		case ebiten.KeyBracketLeft:
 			g.speed -= 1
 		case ebiten.KeyBracketRight:
@@ -168,7 +153,6 @@ func (g *Game) Update() error {
 			g.y -= 10 / g.zoom
 		}
 	}
-	g.zoom = clamp(g.zoom, 0.1, 10)
 	g.speed = clampInt(g.speed, 0, 25)
 	if g.paused {
 		return nil
@@ -233,6 +217,24 @@ func (g *Game) Update() error {
 		draw.Draw(g.image, image.Rect(chg.X1, chg.Y1, chg.X2, chg.Y2), &image.Uniform{color}, image.Point{}, draw.Src)
 	}
 	return nil
+}
+
+func (g *Game) changeZoom(fac float64, aboutMouse bool) {
+	newzoom := fac * g.zoom
+	if newzoom < 0.1 || newzoom > 10 {
+		return
+	}
+	var x, y int
+	if aboutMouse {
+		x, y = ebiten.CursorPosition()
+	} else {
+		w, h := ebiten.WindowSize()
+		x = w / 2
+		y = h / 2
+	}
+	g.x -= (float64(x) / g.zoom) * (1 - 1/fac)
+	g.y -= (float64(y) / g.zoom) * (1 - 1/fac)
+	g.zoom = newzoom
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
