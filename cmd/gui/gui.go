@@ -107,7 +107,13 @@ func (g *Game) Update() error {
 		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
 			g.speed += int(yoff)
 		} else {
-			g.zoom *= math.Pow(1.2, float64(yoff))
+			fac := math.Pow(1.2, float64(yoff))
+			if newzoom := fac * g.zoom; newzoom > 0.1 && newzoom < 10 {
+				x, y := ebiten.CursorPosition()
+				g.x -= (float64(x) / g.zoom) * (1 - 1/fac)
+				g.y -= (float64(y) / g.zoom) * (1 - 1/fac)
+				g.zoom = newzoom
+			}
 		}
 	}
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
@@ -162,8 +168,6 @@ func (g *Game) Update() error {
 			g.y -= 10 / g.zoom
 		}
 	}
-	g.x = clamp(g.x, -2000, 2000)
-	g.y = clamp(g.y, -2000, 2000)
 	g.zoom = clamp(g.zoom, 0.1, 10)
 	g.speed = clampInt(g.speed, 0, 25)
 	if g.paused {
@@ -239,16 +243,20 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	opts.GeoM.Scale(g.zoom, g.zoom)
 	opts.GeoM.Translate(g.x*g.zoom, g.y*g.zoom)
 	screen.DrawImage(g.eimage, opts)
+	mx, my := ebiten.CursorPosition()
+	x := -g.x + (float64(mx) / g.zoom)
+	y := -g.y + (float64(my) / g.zoom)
 	if g.debug {
 		const format = "2006-01-02 15:04:05.000"
-		vector.DrawFilledRect(screen, 0, 0, 160, 80, color.RGBA{0, 0, 0, 127}, false)
+		vector.DrawFilledRect(screen, 0, 0, 160, 96, color.RGBA{0, 0, 0, 127}, false)
 		ebitenutil.DebugPrint(screen, fmt.Sprintf(
-			"%s\nZoom: %0.2f\nSpeed: %0.2fx\nPaused: %v\nUpdates last tick: %d",
+			"%s\nZoom: %0.2f\nSpeed: %0.2fx\nPaused: %v\nChanges last tick: %d\nPosition: %4.0f %4.0f",
 			time.UnixMilli(int64(g.time)+place.Epoch).Format(format),
 			g.zoom,
 			math.Pow(1.5, float64(g.speed)),
 			g.paused,
 			g.updateCount,
+			math.Ceil(x), math.Ceil(y),
 		))
 	}
 }
