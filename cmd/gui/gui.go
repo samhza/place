@@ -32,8 +32,9 @@ type Game struct {
 	zoom  float64
 	speed int
 
-	paused bool
-	debug  bool
+	paused  bool
+	debug   bool
+	changed bool
 
 	time     int
 	nexttime int
@@ -182,6 +183,7 @@ func (g *Game) Update() error {
 			g.nexttime = chg.Time
 			break
 		}
+		g.changed = true
 		g.updateCount++
 		g.time = chg.Time
 		_, err = g.f.Discard(10)
@@ -238,7 +240,10 @@ func (g *Game) changeZoom(fac float64, aboutMouse bool) {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.eimage.WritePixels(g.image.Pix)
+	if g.changed {
+		g.eimage.WritePixels(g.image.Pix)
+		g.changed = false
+	}
 	opts := &ebiten.DrawImageOptions{}
 	if g.zoom < 1 {
 		opts.Filter = ebiten.FilterLinear
@@ -303,6 +308,7 @@ func main() {
 			copy(g.image.Pix[(i*2000+j)*4:], []byte{0xff, 0xff, 0xff, 0xff})
 		}
 	}
+	g.eimage.WritePixels(g.image.Pix)
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
