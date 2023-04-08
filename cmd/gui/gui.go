@@ -286,8 +286,6 @@ func main() {
 		fd:     f,
 		f:      bufio.NewReader(f),
 		zoom:   1,
-		debug:  false,
-		paused: true,
 	}
 	for i := 0; i < 1000; i++ {
 		for j := 0; j < 1000; j++ {
