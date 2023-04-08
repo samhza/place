@@ -239,8 +239,9 @@ func (g *Game) changeZoom(fac float64, aboutMouse bool) {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.eimage.WritePixels(g.image.Pix)
-	opts := &ebiten.DrawImageOptions{
-		Filter: ebiten.FilterNearest,
+	opts := &ebiten.DrawImageOptions{}
+	if g.zoom < 1 {
+		opts.Filter = ebiten.FilterLinear
 	}
 	opts.GeoM.Scale(g.zoom, g.zoom)
 	opts.GeoM.Translate(g.x*g.zoom, g.y*g.zoom)
