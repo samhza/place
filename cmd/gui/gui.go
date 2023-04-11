@@ -283,6 +283,7 @@ func (g *Game) reset() {
 			copy(g.image.Pix[(i*2000+j)*4:], []byte{0xff, 0xff, 0xff, 0xff})
 		}
 	}
+	g.eimage.WritePixels(g.image.Pix)
 }
 
 func (g *Game) Layout(oW, oH int) (int, int) {
