@@ -94,6 +94,7 @@ func clampInt(v, min, max int) int {
 }
 
 func (g *Game) Update() error {
+	g.updateCount = 0
 	if _, yoff := ebiten.Wheel(); yoff != 0 {
 		if ebiten.IsMouseButtonPressed(ebiten.MouseButtonRight) {
 			g.speed += int(yoff)
@@ -164,7 +165,6 @@ func (g *Game) Update() error {
 		return nil
 	}
 	g.nexttime = 0
-	g.updateCount = 0
 	for {
 		buf, err := g.f.Peek(10)
 		if err == io.EOF {
@@ -290,10 +290,22 @@ func (g *Game) Layout(oW, oH int) (int, int) {
 	return oW, oH
 }
 
+func init() {
+	log.SetFlags(0)
+}
+
 func main() {
+	if len(os.Args) > 3 {
+		log.Printf("usage: %s <placedata>\n", os.Args[0])
+		os.Exit(1)
+	}
+	file := "placedata"
+	if len(os.Args) == 2 {
+		file = os.Args[1]
+	}
 	ebiten.SetWindowSize(800, 600)
 	ebiten.SetWindowTitle("r/place viewer")
-	f, err := os.Open("squished")
+	f, err := os.Open(file)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -303,6 +315,7 @@ func main() {
 		fd:     f,
 		f:      bufio.NewReader(f),
 		zoom:   1,
+		speed:  16,
 	}
 	for i := 0; i < 1000; i++ {
 		for j := 0; j < 1000; j++ {
